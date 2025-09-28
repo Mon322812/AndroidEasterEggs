@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -78,14 +80,14 @@ fun SettingsScreen(drawerState: DrawerState = rememberDrawerState(DrawerValue.Cl
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val windowInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
     Scaffold(
-        contentWindowInsets = WindowInsets.systemBars
+        contentWindowInsets = windowInsets
             .only(WindowInsetsSides.End + WindowInsetsSides.Vertical),
         topBar = {
             CenterAlignedTopAppBar(
                 scrollBehavior = scrollBehavior,
-                windowInsets = WindowInsets.systemBars
-                    .only(WindowInsetsSides.End + WindowInsetsSides.Top),
+                windowInsets = windowInsets.only(WindowInsetsSides.End + WindowInsetsSides.Top),
                 title = {
                     Text(
                         text = stringResource(StringsR.string.label_settings),
@@ -112,55 +114,50 @@ fun SettingsScreen(drawerState: DrawerState = rememberDrawerState(DrawerValue.Cl
             modifier = Modifier
                 .padding(
                     start = 12.dp,
-                    end = 12.dp + contentPadding.calculateEndPadding(layoutDirection)
-                )
+                    end = 12.dp + contentPadding.calculateEndPadding(layoutDirection),
+                )// 1. horizontal padding
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())// 2. scrollable
+                .padding(// 3. vertical padding
+                    top = contentPadding.calculateTopPadding() + 8.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 12.dp
+                ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(
-                        top = contentPadding.calculateTopPadding() + 8.dp,
-                        bottom = contentPadding.calculateBottomPadding() + 12.dp
-                    ),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val context = LocalContext.current
-                ThemePref()
+            val context = LocalContext.current
+            ThemePref()
 
-                IconShapePref()
+            IconShapePref()
 
-                if (LanguagePrefUtil.isSupported()) {
-                    LanguagePref()
-                }
-
-                if (IconVisualEffectsPrefUtil.isSupported()) {
-                    IconVisualEffectsPref()
-                }
-
-                SettingDivider()
-
-                TimelinePref()
-
-                CatEditorPref()
-
-                RocketLauncherPref()
-
-                ComponentManagerPref()
-
-                if (!SplitUtils.isActivityEmbedded(context)) {
-                    RetainInRecentsPref()
-                }
-
-                SettingDivider()
-
-                ContributeGroup()
-
-                AboutGroup()
-
-                ContactMeGroup()
-
+            if (LanguagePrefUtil.isSupported()) {
+                LanguagePref()
             }
+
+            if (IconVisualEffectsPrefUtil.isSupported()) {
+                IconVisualEffectsPref()
+            }
+
+            SettingDivider()
+
+            TimelinePref()
+
+            CatEditorPref()
+
+            RocketLauncherPref()
+
+            ComponentManagerPref()
+
+            if (!SplitUtils.isActivityEmbedded(context)) {
+                RetainInRecentsPref()
+            }
+
+            SettingDivider()
+
+            ContributeGroup()
+
+            AboutGroup()
+
+            ContactMeGroup()
         }
     }
 }

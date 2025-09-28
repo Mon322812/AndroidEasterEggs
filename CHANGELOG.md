@@ -1,6 +1,15 @@
 # Changelog
 
-### v4.0.1
+### v4.2.0 (2025-08-25)
+
+- Use Composable wavy line
+- Fix Landroid spaceship landing enter planet interior [#640](https://github.com/hushenghao/AndroidEasterEggs/issues/640)
+- Fix Android 16 Landroid status bar color
+- Fix Rocket Launcher scale in animation
+- Remove Telegram group entrance
+- Upgrade project dependencies
+
+### v4.1.0 (2025-07-07)
 
 - Add SplashScreen support Android 12 below system
 - Fix Android Q Easter Egg 'one' text rotation animation [#587](https://github.com/hushenghao/AndroidEasterEggs/issues/587)

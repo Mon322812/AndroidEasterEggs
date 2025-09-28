@@ -1,5 +1,5 @@
 plugins {
-    id("easter.egg.library")
+    id("easter.eggs.library")
 }
 
 android {
@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(project(":core:resources"))
+    implementation(project(":core:composable"))
 }

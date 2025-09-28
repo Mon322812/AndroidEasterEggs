@@ -1,7 +1,6 @@
 package com.dede.android_eggs.views.settings.compose.basic
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -20,26 +19,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.dede.android_eggs.R
+import com.dede.android_eggs.views.main.compose.Wavy
 
 
 @Composable
 fun SettingDivider() {
-    Box(
+    Wavy(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.4f)
             .padding(vertical = 16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_wavy_line),
-            contentDescription = null
-        )
-    }
+    )
 }
 
 @Composable
@@ -72,6 +64,7 @@ fun SettingPref(
 
 @Composable
 fun SettingPref(
+    modifier: Modifier = Modifier,
     leadingIcon: ImageVector,
     title: String,
     desc: String? = null,
@@ -81,6 +74,7 @@ fun SettingPref(
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     SettingPref(
+        modifier = modifier,
         leadingIcon = {
             Box(Modifier.padding(start = 14.dp)) {
                 Icon(imageVector = leadingIcon, contentDescription = title)
@@ -97,6 +91,7 @@ fun SettingPref(
 
 @Composable
 fun SettingPref(
+    modifier: Modifier = Modifier,
     leadingIcon: (@Composable () -> Unit)? = null,
     title: String,
     desc: String? = null,
@@ -111,7 +106,7 @@ fun SettingPref(
     Card(
         shape = shape,
         colors = cardColors,
-        modifier = Modifier.animateContentSize(),
+        modifier = Modifier.animateContentSize() then modifier,
     ) {
         Card(
             onClick = onClick,

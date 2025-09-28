@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
@@ -161,15 +162,12 @@ private const val HIGHEST_COUNT = 1
 @Preview(showBackground = true)
 fun EasterEggList(
     easterEggs: List<BaseEasterEgg> = EasterEggHelp.previewEasterEggs(),
-    searchFilter: String = "",
+    searchText: String = "",
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val context = LocalContext.current
     val pureEasterEggs = remember(easterEggs) {
         EasterEggModules.providePureEasterEggList(easterEggs)
-    }
-    val searchText = remember(searchFilter) {
-        searchFilter.trim().uppercase()
     }
     val searchMode = searchText.isNotBlank()
     val currentList = remember(searchText, searchMode, easterEggs, pureEasterEggs) {
@@ -205,14 +203,22 @@ fun EasterEggList(
                         items(items = highestList) {
                             EasterEggHighestItem(it)
                         }
-                        item {
-                            Wavy(res = R.drawable.ic_wavy_line)
+                        item("wavy") {
+                            Wavy(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.4f)
+                                    .padding(vertical = 26.dp),
+                            )
                         }
                         items(items = normalList) {
                             EasterEggItem(it, enableItemAnim = false)
                         }
-                        item("wavy2") {
-                            Wavy(res = R.drawable.ic_wavy_line)
+                        item("wavy") {
+                            Wavy(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.4f)
+                                    .padding(vertical = 26.dp),
+                            )
                         }
                         item("footer") {
                             ProjectDescription()
@@ -246,22 +252,40 @@ private fun filterEasterEggs(
     pureEasterEggs: List<EasterEgg>,
     searchText: String,
 ): List<EasterEgg> {
-    val isApiLevel = Regex("^\\d{1,2}$").matches(searchText)
 
-    fun EasterEgg.matchVersionName(version: String): Boolean {
-        val containsStart = EasterEggHelp.getVersionNameByApiLevel(apiLevelRange.first)
-            .contains(version, true)
-        return if (apiLevelRange.first == apiLevelRange.last) {
-            containsStart
-        } else {
-            containsStart || EasterEggHelp.getVersionNameByApiLevel(apiLevelRange.last)
-                .contains(version, true)
+    fun EasterEgg.matchStringResNames(searchText: String): Boolean {
+        return context.getString(nameRes).contains(searchText, true) ||
+                context.getString(nicknameRes).contains(searchText, true)
+    }
+
+    fun EasterEgg.matchApiLevel(searchText: String): Boolean {
+        val isApiLevel = Regex("^\\d{1,2}$").matches(searchText)
+        if (isApiLevel) {
+            val apiLevel = searchText.toIntOrNull() ?: return false
+            return apiLevelRange.contains(apiLevel)
         }
+        return false
+    }
+
+    fun EasterEgg.matchAndroidVersion(searchText: String): Boolean {
+        val versionNameResult = Regex("[\\d.]{1,3}").find(searchText) ?: return false
+        val versionNameValue = versionNameResult.value
+        for (level in apiLevelRange) {
+            val versionName = try {
+                EasterEggHelp.getVersionNameByApiLevel(level)
+            } catch (e: IllegalArgumentException) {
+                // illegal api level, skip
+                return false
+            }
+            if (versionName.startsWith(versionNameValue, true)) {
+                return true
+            }
+        }
+        return false
     }
     return pureEasterEggs.filter {
-        context.getString(it.nameRes).contains(searchText, true) ||
-                context.getString(it.nicknameRes).contains(searchText, true) ||
-                it.matchVersionName(searchText) ||
-                (isApiLevel && it.apiLevelRange.contains(searchText.toIntOrNull() ?: -1))
+        it.matchStringResNames(searchText) ||
+                it.matchApiLevel(searchText) ||
+                it.matchAndroidVersion(searchText)
     }
 }

@@ -33,12 +33,14 @@ import android.os.Handler;
 import android.support.v13.dreams.BasicDream;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import com.dede.android_eggs.composable.ComposeViewBuilder;
 import com.dede.basic.ExecutorUtils;
 
 import java.util.HashMap;
@@ -194,11 +196,14 @@ public class RocketLauncher extends BasicDream {
 
             public void reset() {
                 randomize();
-                boardCenterX = (Board.this.getWidth() - getWidth()) / 2;
-                boardCenterY = (Board.this.getHeight() - getHeight()) / 2;
+                boardCenterX = (Board.this.getWidth() - getWidth()) / 2f;
+                boardCenterY = (Board.this.getHeight() - getHeight()) / 2f;
                 setX(boardCenterX);
                 setY(boardCenterY);
                 fuse = (float) Math.max(boardCenterX, boardCenterY);
+                if (fuse == 0f) {
+                    fuse = 1f; // avoid divide by zero
+                }
                 setRotation(180 - angle);
                 setScaleX(0f);
                 setScaleY(0f);
@@ -257,18 +262,25 @@ public class RocketLauncher extends BasicDream {
             mComponentNames = new ComponentName[0];
         }
 
+        public interface OnComponentIconsChangeListener {
+            void onComponentIconsChanged();
+        }
+
+        private OnComponentIconsChangeListener mOnComponentIconsChangeListener;
+
+        public void setOnComponentIconsChangeListener(OnComponentIconsChangeListener listener) {
+            mOnComponentIconsChangeListener = listener;
+        }
+
         public void setComponentIcons(HashMap<ComponentName, Drawable> icons) {
             mIcons = icons;
             mComponentNames = new ComponentName[mIcons.size()];
             mComponentNames = mIcons.keySet().toArray(mComponentNames);
-
-            if (isAttachedToWindow()) {
-                if (mAnim != null) {
-                    mAnim.cancel();
-                }
-                reset();
-                mAnim.start();
+            if (mOnComponentIconsChangeListener != null) {
+                mOnComponentIconsChangeListener.onComponentIconsChanged();
             }
+
+            this.freeStart();
         }
 
         private void reset() {
@@ -308,7 +320,9 @@ public class RocketLauncher extends BasicDream {
                     final int START_ZOOM_TIME = 3000;
                     if (totalTime < START_ZOOM_TIME) {
                         final float x = totalTime / (float) START_ZOOM_TIME;
-                        final float s = 1f - (float) Math.pow(x - 1, 4);
+                        // scale range from 0 to 1
+                        // https://github.com/hushenghao/AndroidEasterEggs/issues/618
+                        final float s = Math.max(0f, Math.min(1f - (float) Math.pow(x - 1, 4), 1f));
                         setScaleX(s);
                         setScaleY(s);
                     } else {
@@ -358,7 +372,6 @@ public class RocketLauncher extends BasicDream {
             setLayerType(View.LAYER_TYPE_HARDWARE, null);
             setSystemUiVisibility(View.STATUS_BAR_HIDDEN);
 
-            // fix size
 //            reset();
 //            mAnim.start();
 
@@ -386,13 +399,21 @@ public class RocketLauncher extends BasicDream {
             ExecutorUtils.getCachedExecutor().submit(loadIconsTask);
         }
 
-        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-            super.onSizeChanged(w, h, oldw, oldh);
+        private void freeStart() {
+            if (getWidth() == 0 || getHeight() == 0 || !isAttachedToWindow()) {
+                return;
+            }
             if (mAnim != null) {
                 mAnim.cancel();
             }
             reset();
             mAnim.start();
+        }
+
+        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+            super.onSizeChanged(w, h, oldw, oldh);
+
+            freeStart();
         }
 
 
@@ -451,13 +472,27 @@ public class RocketLauncher extends BasicDream {
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        final int longside = metrics.widthPixels > metrics.heightPixels
-                ? metrics.widthPixels : metrics.heightPixels;
+        final int longside = Math.max(metrics.widthPixels, metrics.heightPixels);
 
         Board b = new Board(this, null);
         setContentView(b, new ViewGroup.LayoutParams(longside, longside));
-        b.setX((metrics.widthPixels - longside) / 2);
-        b.setY((metrics.heightPixels - longside) / 2);
+        b.setX((metrics.widthPixels - longside) / 2f);
+        b.setY((metrics.heightPixels - longside) / 2f);
+
+        View loadingIndicator = ComposeViewBuilder.buildDarkThemeLoadingIndicator(this);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+        ViewGroup viewGroup = findViewById(android.R.id.content);
+        viewGroup.addView(loadingIndicator, params);
+        b.setOnComponentIconsChangeListener(() ->
+                loadingIndicator.animate()
+                        .scaleX(0.2f)
+                        .scaleY(0.2f)
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction(() -> viewGroup.removeView(loadingIndicator))
+                        .start());
+
     }
 
     @Override

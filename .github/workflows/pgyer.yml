@@ -22,10 +22,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'adopt'
@@ -47,8 +47,6 @@ jobs:
 
       - name: Build with Fastlane
         env:
-          TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           PGYER_API_KEY: ${{ secrets.PGYER_API_KEY }}
         if: ${{ env.PGYER_API_KEY != ''}}
         run: |

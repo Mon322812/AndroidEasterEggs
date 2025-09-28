@@ -136,7 +136,33 @@ object EasterEggShortcutsHelp {
         val shortcut = createShortcutInfo(context, shortcutId, egg, true)
         val callback = PinShortcutReceiver.registerCallbackWithTimeout(context)
         cachedExecutor.execute {
-            ShortcutManagerCompat.requestPinShortcut(context, shortcut, callback)
+            try {
+                val pinedShortcut =
+                    ShortcutManagerCompat.getShortcuts(
+                        context, ShortcutManagerCompat.FLAG_MATCH_PINNED
+                    ).find { it.id == shortcutId }
+                if (pinedShortcut != null) {
+                    if (!pinedShortcut.isEnabled) {
+                        // disable shortcut, re-enable it
+                        // https://github.com/hushenghao/AndroidEasterEggs/issues/620
+                        try {
+                            ShortcutManagerCompat.enableShortcuts(context, listOf(shortcut))
+                        } catch (_: RuntimeException) {
+                        }
+                    }
+                    // already pinned, perform callback
+                    PinShortcutReceiver.performCallback(context, callback)
+                    return@execute
+                }
+            } catch (e: IllegalStateException) {
+                e.printStackTrace()
+            }
+
+            try {
+                // https://github.com/hushenghao/AndroidEasterEggs/issues/617
+                ShortcutManagerCompat.requestPinShortcut(context, shortcut, callback)
+            } catch (_: RuntimeException) {
+            }
         }
     }
 
@@ -163,6 +189,18 @@ object EasterEggShortcutsHelp {
                     PendingIntent.FLAG_UPDATE_CURRENT,
                     false
                 )
+            }
+
+            fun performCallback(context: Context, callback: IntentSender?) {
+                if (callback == null) return
+
+                val intent = Intent(ACTION)
+                    .setPackage(context.packageName)
+                try {
+                    callback.sendIntent(context, 0, intent, null, null)
+                } catch (e: IntentSender.SendIntentException) {
+                    e.printStackTrace()
+                }
             }
 
             fun registerCallbackWithTimeout(context: Context): IntentSender? {

@@ -1,7 +1,9 @@
-@file:Suppress("UnstableApiUsage")// androidResources.localeFilters
+@file:Suppress("UnstableApiUsage")
+
+import com.dede.android_eggs.dls.marketImplementation
 
 plugins {
-    id("easter.egg.app")
+    id("easter.eggs.app")
 }
 
 android {
@@ -22,43 +24,14 @@ android {
 
     defaultConfig {
         applicationId = "com.dede.android_eggs"
-        versionCode = 65
-        versionName = "4.0.1"
+        versionCode = 66
+        versionName = "4.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         base.archivesName.set("easter_eggs_${versionName}_${versionCode}")
 
         // Language configuration only
         buildConfigField("int", "LANGUAGE_RES", androidResources.localeFilters.size.toString())
-    }
-
-    signingConfigs {
-        if (keyprops.isEmpty) return@signingConfigs
-        create("release") {
-            keyAlias = keyprops.getProperty("keyAlias")
-            keyPassword = keyprops.getProperty("keyPassword")
-            storeFile = file(keyprops.getProperty("storeFile"))
-            storePassword = keyprops.getProperty("storePassword")
-            enableV3Signing = true
-            enableV4Signing = true
-        }
-    }
-
-    buildTypes {
-        val config = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
-        debug {
-            signingConfig = config
-            // vcsInfo.include = true
-        }
-        release {
-            isShrinkResources = true
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            signingConfig = config
-        }
     }
 
     flavorDimensions += listOf("app", "track")
@@ -93,24 +66,6 @@ android {
                 variantBuilder.enable = false
             }
         }
-    }
-
-    packaging {
-        resources.excludes += listOf(
-            "META-INF/*.version",
-            "META-INF/NOTICE.*",
-            "META-INF/LICENSE",
-            "META-INF/**/LICENSE.txt",
-            "kotlin/**.kotlin_builtins",
-            "DebugProbesKt.bin",
-            "*.properties"
-        )
-    }
-
-    dependenciesInfo {
-        // https://developer.android.com/build/dependencies#dependency-info-play
-        // Disables dependency metadata when building APKs.
-        includeInApk = false
     }
 
 }
